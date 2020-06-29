@@ -14,20 +14,25 @@
 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
 kubectl --namespace kube-system create serviceaccount tiller
 kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
-helm init --service-account tiller
+helm init --service-account tiller --history-max 100 --wait
 kubectl patch deployment tiller-deploy --namespace=kube-system --type=json --patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]'
 
-# Make io Hub faster, Create Optimized Storage Class
-# NOTE: I couldn't get this working, will try again later
-#kubectl apply -f storageclass.yaml
 
 ### Create & Run JupyterHub
 # https://zero-to-jupyterhub.readthedocs.io/en/latest/setup-jupyterhub.html
 # Add Security Token to config.yaml
-sed -i 's/<RANDOM_HEX>/'"$( openssl rand -hex 32 )"'/g' config.yaml
+{ echo "proxy:"; echo -e "  secreteToken:'$(openssl rand -hex 32)'"; } | fmt >> config.yaml
 # Add jupyterhub github repo to helm
 helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
 helm repo update
 # Run the config.yaml file to start up JupyterHub: RELEASE=NAMESPACE=jhub, JUPYTER_VERSION=0.7.0
-helm upgrade --install jhub jupyterhub/jupyterhub --namespace jhub --version 0.8-ccc1e6b --values config.yaml
+RELEASE=jhub
+NAMESPACE=jhub
 
+helm upgrade --install $RELEASE jupyterhub/jupyterhub \
+  --namespace $NAMESPACE  \
+  --version=0.9.0 \
+  --values config.yaml
+
+kubectl config set-context $(kubectl config current-context) --namespace ${NAMESPACE:-jhub}
+kubectl get service --namespace jhub
