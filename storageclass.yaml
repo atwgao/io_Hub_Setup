@@ -6,4 +6,4 @@ metadata:
 provisioner: kubernetes.io/gce-pd
 parameters:
   type: pd-ssd
-  zones: us-central1-c
+  zones: europe-central1-c

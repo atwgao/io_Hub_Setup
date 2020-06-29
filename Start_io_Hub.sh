@@ -21,7 +21,8 @@ kubectl patch deployment tiller-deploy --namespace=kube-system --type=json --pat
 ### Create & Run JupyterHub
 # https://zero-to-jupyterhub.readthedocs.io/en/latest/setup-jupyterhub.html
 # Add Security Token to config.yaml
-{ echo "proxy:"; echo -e "  secreteToken:'$(openssl rand -hex 32)'"; } | fmt >> config.yaml
+sed -i 's/<RANDOM_HEX>/'"$( openssl rand -hex 32 )"'/g' config.yaml
+#{ echo "proxy:"; echo -e "  secreteToken:'$(openssl rand -hex 32)'"; } | fmt >> config.yaml
 # Add jupyterhub github repo to helm
 helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
 helm repo update
